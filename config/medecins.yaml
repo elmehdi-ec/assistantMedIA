@@ -1,0 +1,14 @@
+Dr_Elmehdi:
+  langue: "fr"
+  theme: "nuit"
+  resume_actif: true
+
+Dr_Salma:
+  langue: "ar"
+  theme: "jour"
+  resume_actif: true
+
+Dr_Imane:
+  langue: "en"
+  theme: "jour"
+  resume_actif: false

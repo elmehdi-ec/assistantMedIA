@@ -1,0 +1,21 @@
+# Paramètres généraux du projet
+version: "1.0.0"
+nom_projet: "AssistantMedIA"
+langue: "fr"
+
+# Configuration de l’interface
+interface_theme: "clair"                # Options : clair / sombre
+message_accueil: "Bienvenue Dr Elmehdi 👨‍⚕️"
+
+# Fonctionnalités activées
+mode_local: true                        # true = sans cloud
+resume_actif: true                      # Activer le résumé clinique IA
+niveau_debug: false                     # Affiche les logs détaillés si true
+
+# Seuils médicaux pour triage
+seuil_triage_urgent: 8
+seuil_triage_moyen: 4
+
+# Sécurité et confidentialité
+confidentialite: "strict"              # Options : strict / modérée / ouverte
+usage_autorise: "cabinet_médical"      # Restriction professionnelle
