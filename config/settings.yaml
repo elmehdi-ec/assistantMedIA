@@ -1,21 +1,45 @@
-# Paramètres généraux du projet
-version: "1.0.0"
-nom_projet: "AssistantMedIA"
-langue: "fr"
+assistant:
+  # 🗂 Informations générales
+  version: "1.0.0"
+  nom_projet: "AssistantMedIA"
+  langue_par_defaut: "fr"
 
-# Configuration de l’interface
-interface_theme: "clair"                # Options : clair / sombre
-message_accueil: "Bienvenue Dr Elmehdi 👨‍⚕️"
+  # 🎨 Interface utilisateur
+  interface_theme: "clair"  # clair / sombre
+  message_accueil: "Bienvenue Dr Elmehdi 👨‍⚕️"
 
-# Fonctionnalités activées
-mode_local: true                        # true = sans cloud
-resume_actif: true                      # Activer le résumé clinique IA
-niveau_debug: false                     # Affiche les logs détaillés si true
+  # 🧠 Intelligence artificielle
+  modele_ia: "mistralai/Mistral-7B-Instruct-v0.2"
+  mode_fallback: "demo"     # demo / manuel / vide
+  resume_actif: true        # active ou désactive le résumé IA
 
-# Seuils médicaux pour triage
-seuil_triage_urgent: 8
-seuil_triage_moyen: 4
+  # 🧪 Mode d'exécution
+  mode_local: true          # local = sans cloud
+  niveau_debug: false       # logs détaillés si true
 
-# Sécurité et confidentialité
-confidentialite: "strict"              # Options : strict / modérée / ouverte
-usage_autorise: "cabinet_médical"      # Restriction professionnelle
+  # 🩺 Seuils médicaux pour priorisation
+  seuil_triage_urgent: 8    # >= 8 = urgence
+  seuil_triage_moyen: 4     # >= 4 = modéré
+  seuil_gravite: 2          # gravité minimale pour résumé IA
+
+  # 🔐 Confidentialité & usage
+  confidentialite: "strict"         # strict / modérée / ouverte
+  usage_autorise: "cabinet_médical" # contexte métier autorisé
+  droit_commercial: true            # true = usage commercial autorisé
+  licence: "MIT"                    # type de licence (MIT / privative / CC BY-NC)
+
+  # 🛠️ Options produit
+  export_pdf: true                  # activer export PDF patient
+  export_csv: true                  # activer export CSV
+  enregistrement_logs: true        # journalisation locale
+  affichage_version_ui: true       # afficher version dans Streamlit
+
+  # 📡 API & connectivité
+  timeout_api: 30                   # délai max pour réponse IA
+  retry_api: 1                      # nombre de tentatives en cas d’échec
+  verification_api_active: true    # test automatique de l’API avant résumé
+
+  # 📢 Branding & identité
+  nom_editeur: "Clinique Atlas Santé"
+  contact_support: "contact@assistantmedia.ma"
+  url_site_web: "https://assistantmedia.streamlit.app"
