@@ -1,58 +1,42 @@
 import requests
 import yaml
+import os
 
-# 🔐 Chargement du token Hugging Face
-def charger_token():
-    try:
-        with open("config/token.yaml", "r", encoding="utf-8") as f:
-            return yaml.safe_load(f)["huggingface_token"]
-    except Exception:
-        return None
-
-HF_TOKEN = charger_token()
-
-# 👤 Chargement du profil médecin
+# 📁 Charger le profil médecin
 def charger_profil(medecin_id):
     try:
-        with open("config/medecins.yaml", "r", encoding="utf-8") as f:
-            profils = yaml.safe_load(f)
-        return profils.get(medecin_id, {"langue": "fr"})
+        with open("config/medecins.yaml", "r", encoding="utf-8") as file:
+            profils = yaml.safe_load(file)
+        return profils.get(medecin_id, {})
     except Exception:
-        return {"langue": "fr"}
+        return {}
 
-# 🧠 Fonction principale : résumé clinique multilingue
-def generer_resume(symptomes: str, medecin_id: str, mode_demo: bool = False) -> str:
+# 🧠 Générer le résumé IA
+def generer_resume(symptomes, medecin_id, HF_TOKEN, mode_demo=False):
     profil = charger_profil(medecin_id)
     langue = profil.get("langue", "fr")
+    specialite = profil.get("specialite", "médecine générale")
 
-    if mode_demo or HF_TOKEN is None:
-        return f"🧠 [DEMO-{langue}] Résumé simulé : {symptomes}"
+    # 💬 Prompt adapté
+    prompt = (
+        f"Tu es un médecin spécialiste en {specialite}. Résume les symptômes suivants en style clinique, en {langue} : {symptomes}"
+    )
 
-    # 🎯 Création du prompt adapté
-    if langue == "fr":
-        prompt = f"Tu es une IA médicale francophone. Résume ces symptômes : {symptomes}"
-    elif langue == "ar":
-        prompt = f"أنت مساعد طبي. لخص الأعراض التالية بطريقة سريرية: {symptomes}"
-    else:
-        prompt = f"You are a clinical AI. Summarize these symptoms: {symptomes}"
+    # 🔁 Mode démo = réponse simulée
+    if mode_demo:
+        return f"[Résumé IA simulé en {langue}] : Patient présente {symptomes.lower()}."
 
-    headers = {
-        "Authorization": f"Bearer {HF_TOKEN}",
-        "Content-Type": "application/json"
-    }
-
-    url = "https://api-inference.huggingface.co/models/google/medgemma-4b-it"
+    # 🔌 Appel API Hugging Face
+    headers = {"Authorization": f"Bearer {HF_TOKEN}"}
     payload = {"inputs": prompt}
 
     try:
-        response = requests.post(url, headers=headers, json=payload)
+        url = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
+        response = requests.post(url, headers=headers, json=payload, timeout=20)
         if response.status_code == 200:
-            result = response.json()
-            if isinstance(result, list) and "generated_text" in result[0]:
-                return result[0]["generated_text"].strip()
-            else:
-                return f"⚠️ Réponse inattendue : {result}"
+            output = response.json()
+            return output[0]["generated_text"]
         else:
-            return f"⛔ Erreur API ({response.status_code}) : {response.text}"
-    except Exception as e:
-        return f"⚠️ Exception IA : {str(e)}"
+            return f"[Fallback IA] Symptômes détectés : {symptomes}. Résumé manuel en cours."
+    except Exception:
+        return f"[⚠️ IA indisponible] Résumé simulé : {symptomes.lower()}"
