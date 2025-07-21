@@ -1,0 +1,27 @@
+Licence Privative — AssistantMedIA
+
+Ce logiciel, ses fichiers associés et sa documentation sont la propriété exclusive de Elmehdi Echetouani, étudiant en médecine.
+
+🩺 Usage autorisé :
+- L'utilisation est strictement réservée au créateur et aux professionnels de santé marocains autorisés par celui-ci.
+- L’usage est limité à un contexte médical, clinique ou académique situé au Maroc.
+- Toute installation doit conserver ce fichier de licence sans modification.
+
+🚫 Usage interdit :
+- Toute reproduction, diffusion, vente, sous-licence ou commercialisation sans accord écrit est interdite.
+- Toute utilisation en dehors du territoire marocain ou à des fins non médicales est strictement interdite.
+- L’accès au code source ne confère aucun droit de propriété, de modification ou de redistribution.
+
+🔐 Confidentialité et respect éthique :
+- L’outil ne doit jamais être utilisé pour collecter, exposer ou transférer des données patient vers des services externes.
+- Le respect des normes locales de confidentialité et de sécurité des données est obligatoire.
+
+📢 Attribution :
+- Toute présentation publique de l’outil doit inclure :  
+  © AssistantMedIA — Conçu par Elmehdi Echetouani, étudiant en médecine
+
+📬 Contact légal : contact@assistantmedia.ma  
+📍 Domaine couvert : Maroc uniquement
+
+Ce logiciel est fourni tel quel, sans garantie explicite ou implicite.  
+L’auteur décline toute responsabilité en cas d’erreur médicale, diagnostic erroné ou perte de données.
