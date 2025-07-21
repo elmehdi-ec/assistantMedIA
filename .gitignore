@@ -1,2 +1,8 @@
-.env 
-config/token.yaml 
+# Sensitive files to ignore
+.env
+config/token.yaml
+
+# Python & Streamlit cache
+__pycache__/
+*.pyc
+.streamlit/
