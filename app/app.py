@@ -30,7 +30,7 @@ except Exception:
 
 # 🎨 Configuration de l’interface
 st.set_page_config(page_title=settings.get("nom_projet", "Assistant IA"), layout="wide")
-st.title("🧠 " + settings.get("nom_projet", "Assistant IA Clinique"))
+st.title("🧠 " + settings.get("nom_projet", "Assistant IA Médical"))
 
 # 🧪 Case mode démo
 mode_demo = st.sidebar.checkbox("🧪 Activer le mode démo (offline)", value=False)
