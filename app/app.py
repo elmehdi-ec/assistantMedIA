@@ -6,7 +6,8 @@ from modules.resume import generer_resume
 
 # 🔐 Lecture du token IA Hugging Face
 HF_TOKEN = os.getenv("HF_TOKEN")
-st.sidebar.write("🔐 Token IA détecté :", HF_TOKEN)
+if HF_TOKEN is None:
+    st.error("⚠️ Aucun HF_TOKEN détecté dans l’environnement. Vérifiez le format TOML et redéployez votre app.")
 
 # ⚙️ Chargement des paramètres globaux
 def charger_settings():
