@@ -21,8 +21,8 @@ Donnez un résumé synthétique médical avec hypothèse diagnostique et conduit
     payload = { "inputs": prompt.strip() }
 
     try:
-        # ✅ URL Hugging Face du modèle ouvert et compatible
-        url = "https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3-8B-Instruct"
+        # ✅ Modèle stable, compatible avec Inference API publique
+        url = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1"
         response = requests.post(url, headers=headers, json=payload, timeout=60)
 
         if response.status_code == 200:
@@ -30,7 +30,7 @@ Donnez un résumé synthétique médical avec hypothèse diagnostique et conduit
             if isinstance(data, list) and "generated_text" in data[0]:
                 return data[0]["generated_text"].strip()
             else:
-                return f"⚠️ Format inattendu reçu : {str(data)}"
+                return f"⚠️ Format inattendu : {data}"
         else:
             return f"❌ Erreur {response.status_code} : {response.text[:120]}"
     except Exception as e:
