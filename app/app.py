@@ -34,12 +34,12 @@ except Exception:
     st.error("❌ Fichier 'cas_simules.csv' introuvable ou illisible.")
     st.stop()
 
-# 🎨 Interface Streamlit
+# 🎨 Interface
 st.set_page_config(page_title=settings.get("nom_projet", "Assistant Médical IA"), layout="wide")
 st.title("🧠 " + settings.get("nom_projet", "Assistant Médical IA"))
 st.markdown(settings.get("message_accueil", "Bienvenue 👋"))
 
-# 🧪 Mode fallback démo
+# 🧪 Mode IA ou démo
 mode_demo = st.sidebar.checkbox("🧪 Activer le mode démo (offline)", value=False)
 mode_label = "Démo" if mode_demo else "IA"
 st.caption(f"🧬 Version : {settings.get('version', '1.0')} — Mode : {mode_label}")
