@@ -1,77 +1,81 @@
 import streamlit as st
 import pandas as pd
 import os
-import configparser
-import requests
+import yaml
+from modules.resume import generer_resume
 
-# ---------- Configuration ----------
-st.set_page_config(page_title="Assistant IA clinique", layout="wide")
-config = configparser.ConfigParser()
-config.read('config.ini')
-HF_TOKEN = config.get("default", "HF_TOKEN", fallback=None)
+# 🔐 Lecture du token IA Hugging Face
+HF_TOKEN = os.getenv("HF_TOKEN")
 
-# ---------- Sidebar ----------
-mode_demo = st.sidebar.checkbox("🎛️ Activer le mode démo (offline)", value=False)
-profil_medecin = st.sidebar.selectbox("🧑‍⚕️ Profil :", options=["Ahmed", "Salma", "Youssef", "Imane"])
-
-if HF_TOKEN:
-    st.sidebar.success(f"🔐 HF_TOKEN détecté : `{HF_TOKEN[:4]}...{HF_TOKEN[-4:]}`")
-else:
-    st.sidebar.warning("⚠️ Aucun HF_TOKEN détecté dans le fichier `config.ini`.")
-
-# ---------- Fonctions ----------
-def load_data():
-    return pd.DataFrame([
-        {"Nom": "Ahmed", "Âge": 65, "Sexe": "Homme", "Symptômes": "Fièvre, toux, essoufflement", "Gravité": 8},
-        {"Nom": "Salma", "Âge": 32, "Sexe": "Femme", "Symptômes": "Céphalée, douleur oreille", "Gravité": 3},
-        {"Nom": "Youssef", "Âge": 74, "Sexe": "Homme", "Symptômes": "Confusion, chute récente", "Gravité": 9},
-        {"Nom": "Imane", "Âge": 19, "Sexe": "Femme", "Symptômes": "Maux gorge, fièvre", "Gravité": 4},
-    ])
-
-def generer_resume(symptomes):
-    prompt = f"Voici un résumé médical des symptômes suivants : {symptomes}"
-    headers = {
-        "Authorization": f"Bearer {HF_TOKEN}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "inputs": prompt,
-        "parameters": {"max_new_tokens": 100}
-    }
+# ⚙️ Chargement des paramètres globaux
+def charger_settings():
     try:
-        response = requests.post(
-            "https://api-inference.huggingface.co/models/google/flan-t5-large",
-            headers=headers,
-            json=payload,
-            timeout=20
-        )
-        if response.status_code == 200:
-            return response.json()[0]["generated_text"]
-        else:
-            return f"❌ Erreur API: {response.status_code}"
-    except Exception as e:
-        return f"⚠️ Erreur : {e}"
+        with open("config/settings.yaml", "r", encoding="utf-8") as file:
+            return yaml.safe_load(file).get("assistant", {})
+    except Exception:
+        return {}
 
-# ---------- UI ----------
-st.title("📋 Cas cliniques")
-st.markdown(f"### Bienvenue **{profil_medecin}** 🩺")
+settings = charger_settings()
 
-df = load_data()
-df_display = df.copy()
-df_display["Résumé IA"] = ""
+# 📁 Chargement des cas cliniques
+DATA_PATH = "data/cas_simules.csv"
+try:
+    df = pd.read_csv(DATA_PATH, encoding="utf-8")
+except Exception:
+    st.error("❌ Fichier 'cas_simules.csv' introuvable ou illisible.")
+    st.stop()
 
-# ---------- Résumé IA ----------
-if st.button("🧠 Générer les résumés IA"):
-    if mode_demo or not HF_TOKEN:
-        df_display["Résumé IA"] = df["Symptômes"].apply(lambda x: "Mode démo — résumé non généré")
-    else:
-        with st.spinner("⏳ Envoi des cas au moteur IA..."):
-            df_display["Résumé IA"] = df["Symptômes"].apply(generer_resume)
-        st.success("✅ Résumés IA générés.")
+# 🎨 Configuration de l’interface
+st.set_page_config(page_title=settings.get("nom_projet", "Assistant IA"), layout="wide")
+st.title("🧠 " + settings.get("nom_projet", "Assistant IA Clinique"))
 
-# ---------- Output ----------
-st.dataframe(df_display)
+# 🧪 Case pour activer/désactiver le mode démo
+mode_demo = st.sidebar.checkbox("🧪 Activer le mode démo (offline)", value=(settings.get("mode_fallback", "") == "demo"))
+mode_label = "Démo" if mode_demo else "IA"
 
-# ---------- Export ----------
-csv = df_display.to_csv(index=False).encode('utf-8')
-st.download_button("📥 Télécharger les cas enrichis (.csv)", csv, "cas_cliniques.csv", "text/csv")
+if settings.get("affichage_version_ui", True):
+    st.caption(f"🧬 Version : {settings.get('version', '1.0')} — Mode : {mode_label}")
+
+st.markdown(settings.get("message_accueil", "Bienvenue 👋"))
+
+# 🔐 Affichage token pour vérification (à retirer en production)
+st.sidebar.write("🔐 Token IA détecté :", HF_TOKEN)
+
+# 🩺 Sélection du profil médecin
+st.sidebar.markdown("## 🩺 Profil médecin")
+if "Médecin" in df.columns:
+    medecin_id = st.sidebar.selectbox("👨‍⚕️ Sélectionnez votre profil :", df["Médecin"].dropna().unique())
+else:
+    default_col = df.columns[0] if len(df.columns) > 0 else "Médecin"
+    st.sidebar.warning(f"⚠️ Colonne 'Médecin' absente — utilisation de '{default_col}'")
+    medecin_id = st.sidebar.selectbox("👨‍⚕️ Profil :", df[default_col].dropna().unique())
+
+# ➕ Ajout de la colonne Résumé IA si absente
+if "Résumé IA" not in df.columns:
+    df["Résumé IA"] = ""
+
+# 📋 Affichage des cas cliniques
+st.subheader("📋 Cas cliniques")
+st.dataframe(df, use_container_width=True)
+
+# 🔁 Génération des résumés IA
+if st.button("🔁 Générer les résumés IA"):
+    st.info("📡 Envoi des cas au moteur IA...")
+
+    for i, row in df.iterrows():
+        symptomes = row.get("Symptômes", "")
+        if isinstance(symptomes, str) and symptomes.strip():
+            resume = generer_resume(symptomes, medecin_id, hf_token=HF_TOKEN, mode_demo=mode_demo)
+            df.at[i, "Résumé IA"] = resume
+
+    st.success("✅ Résumés IA générés.")
+
+# 📥 Export CSV
+if settings.get("export_csv", True):
+    csv = df.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        label="📥 Télécharger les cas enrichis (.csv)",
+        data=csv,
+        file_name="cas_cliniques_enrichis.csv",
+        mime="text/csv"
+    )
