@@ -16,7 +16,7 @@ else:
     st.sidebar.error("⚠️ Aucun HF_TOKEN détecté. Vérifiez le champ Secrets dans Streamlit Cloud.")
     st.stop()
 
-# ⚙️ Chargement des paramètres globaux
+# ⚙️ Chargement des paramètres
 def charger_settings():
     try:
         with open("config/settings.yaml", "r", encoding="utf-8") as file:
@@ -34,12 +34,12 @@ except Exception:
     st.error("❌ Fichier 'cas_simules.csv' introuvable ou illisible.")
     st.stop()
 
-# 🎨 Interface
+# 🎨 Interface Streamlit
 st.set_page_config(page_title=settings.get("nom_projet", "Assistant Médical IA"), layout="wide")
 st.title("🧠 " + settings.get("nom_projet", "Assistant Médical IA"))
 st.markdown(settings.get("message_accueil", "Bienvenue 👋"))
 
-# 🧪 Mode démo (fallback simulé)
+# 🧪 Mode fallback démo
 mode_demo = st.sidebar.checkbox("🧪 Activer le mode démo (offline)", value=False)
 mode_label = "Démo" if mode_demo else "IA"
 st.caption(f"🧬 Version : {settings.get('version', '1.0')} — Mode : {mode_label}")
@@ -52,17 +52,17 @@ else:
     default_col = df.columns[0] if len(df.columns) > 0 else "Médecin"
     medecin_id = st.sidebar.selectbox("👨‍⚕️ Profil :", df[default_col].dropna().unique())
 
-# ➕ Colonne Résumé IA
+# ➕ Ajout colonne Résumé IA si absente
 if "Résumé IA" not in df.columns:
     df["Résumé IA"] = ""
 
-# 📋 Affichage des cas
+# 📋 Affichage des cas cliniques
 st.subheader("📋 Cas cliniques")
 st.dataframe(df, use_container_width=True)
 
-# 🔁 Génération IA
+# 🔁 Génération des résumés IA
 if st.button("🔁 Générer les résumés IA"):
-    st.info("📡 Résumés IA en cours de génération...")
+    st.info("📡 Résumés IA en cours...")
     for i, row in df.iterrows():
         symptomes = row.get("Symptômes", "")
         if isinstance(symptomes, str) and symptomes.strip():
