@@ -6,3 +6,4 @@ config/token.yaml
 __pycache__/
 *.pyc
 .streamlit/
+app/config.ini
