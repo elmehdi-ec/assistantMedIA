@@ -64,5 +64,6 @@ if st.button("🔁 Générer les résumés IA"):
     st.info("📡 Envoi des cas au moteur IA...")
 
     for i, row in df.iterrows():
-        symptomes = row.get("Symptômes", "")
-        if isinstance
+    symptomes = row.get("Symptômes", "")
+    if isinstance(symptomes, str) and symptomes.strip():
+        resume
