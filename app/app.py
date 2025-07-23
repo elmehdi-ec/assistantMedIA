@@ -34,12 +34,12 @@ except Exception:
     st.error("❌ Fichier 'cas_simules.csv' introuvable ou illisible.")
     st.stop()
 
-# 🎨 Interface Streamlit
+# 🎨 Interface
 st.set_page_config(page_title=settings.get("nom_projet", "Assistant Médical IA"), layout="wide")
 st.title("🧠 " + settings.get("nom_projet", "Assistant Médical IA"))
 st.markdown(settings.get("message_accueil", "Bienvenue 👋"))
 
-# 🧪 Mode IA ou fallback
+# 🧪 Mode démo (fallback simulé)
 mode_demo = st.sidebar.checkbox("🧪 Activer le mode démo (offline)", value=False)
 mode_label = "Démo" if mode_demo else "IA"
 st.caption(f"🧬 Version : {settings.get('version', '1.0')} — Mode : {mode_label}")
@@ -52,15 +52,15 @@ else:
     default_col = df.columns[0] if len(df.columns) > 0 else "Médecin"
     medecin_id = st.sidebar.selectbox("👨‍⚕️ Profil :", df[default_col].dropna().unique())
 
-# ➕ Ajout colonne Résumé IA si absente
+# ➕ Colonne Résumé IA
 if "Résumé IA" not in df.columns:
     df["Résumé IA"] = ""
 
-# 📋 Affichage des cas cliniques
+# 📋 Affichage des cas
 st.subheader("📋 Cas cliniques")
 st.dataframe(df, use_container_width=True)
 
-# 🔁 Génération des résumés IA
+# 🔁 Génération IA
 if st.button("🔁 Générer les résumés IA"):
     st.info("📡 Résumés IA en cours de génération...")
     for i, row in df.iterrows():
@@ -75,7 +75,7 @@ if st.button("🔁 Générer les résumés IA"):
             df.at[i, "Résumé IA"] = resume
     st.success("✅ Résumés générés via IA.")
 
-# 📥 Export CSV des cas enrichis
+# 📥 Export CSV
 if settings.get("export_csv", True):
     csv = df.to_csv(index=False).encode("utf-8")
     st.download_button(
