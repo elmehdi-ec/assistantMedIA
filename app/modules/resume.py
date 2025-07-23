@@ -2,36 +2,41 @@ import requests
 
 def generer_resume(symptomes: str, medecin_id: str, hf_token: str, mode_demo: bool = False) -> str:
     if mode_demo or hf_token is None:
-        return f"(Fallback simulé) {symptomes[:40]}..."
+        return f"(Simulation démo) {symptomes[:40]}..."
 
     headers = {
         "Authorization": f"Bearer {hf_token}",
         "Content-Type": "application/json"
     }
+
+    # 🔎 Construction du prompt pour Mixtral
+    prompt = f"""
+Vous êtes un médecin urgentiste.
+Voici le cas clinique :
+Patient : {medecin_id}
+Symptômes : {symptomes}
+
+Donnez un résumé synthétique médical, avec hypothèse diagnostique et conduite à tenir.
+"""
+
     payload = {
-        "inputs": f"Patient : {medecin_id}\nSymptômes : {symptomes}\n\nRésumé clinique synthétique :"
+        "inputs": prompt.strip()
     }
 
     try:
-        response = requests.post(
-            url="https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
-            headers=headers,
-            json=payload,
-            timeout=30
-        )
+        # ✅ URL corrigée vers modèle Mixtral actif
+        url = "https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1"
+        response = requests.post(url, headers=headers, json=payload, timeout=60)
 
         if response.status_code == 200:
             data = response.json()
-            # Certains modèles renvoient une liste d'objets text
+
+            # 🔍 Extraction du texte généré
             if isinstance(data, list) and "generated_text" in data[0]:
                 return data[0]["generated_text"].strip()
-            elif isinstance(data, dict) and "generated_text" in data:
-                return data["generated_text"].strip()
-            elif isinstance(data, list) and "generated_text" in data[0].get("generated_token", {}):
-                return data[0]["generated_token"]["generated_text"].strip()
             else:
-                return f"❌ Format de réponse inattendu : {data}"
+                return f"⚠️ Format inattendu reçu : {str(data)}"
         else:
-            return f"❌ Erreur {response.status_code} : {response.text[:100]}"
+            return f"❌ Erreur {response.status_code} : {response.text[:120]}"
     except Exception as e:
         return f"❌ Erreur lors de l’appel IA : {str(e)}"
