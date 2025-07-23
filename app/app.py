@@ -1,35 +1,66 @@
-import streamlit as st
-from transformers import pipeline
 import os
+import streamlit as st
+import pandas as pd
+import requests
 
-# Title and description
-st.set_page_config(page_title="AssistantMedIA", page_icon="🩺")
-st.title("🩺 Assistant IA Clinique Multilingue")
-st.write("Posez vos questions médicales dans la langue de votre choix.")
+st.set_page_config(page_title="Assistant IA Médical", layout="wide")
 
-# Retrieve Hugging Face token
-HF_TOKEN = os.getenv("HF_TOKEN", "your_huggingface_token_here")  # Replace with secure method if needed
+st.title("🧠 Assistant IA Médical")
+st.markdown("Version : **1.0.0** — Mode : **IA**")
 
-# Display token in sidebar (masked for security)
-st.sidebar.write("🔐 HF_TOKEN =", HF_TOKEN[:4] + "..." + HF_TOKEN[-4:])
+# === TOKEN ===
+HF_TOKEN = os.getenv("HF_TOKEN")
+DEMO_MODE = HF_TOKEN is None
 
-# Language selection
-language = st.selectbox("Choisissez la langue", ["fr", "en", "es", "de", "ar"])
+# Affichage de l’état du token
+if DEMO_MODE:
+    st.warning("🔐 Mode démo activé — aucun token Hugging Face détecté.")
+else:
+    st.success(f"🔐 Token Hugging Face détecté. Début : `{HF_TOKEN[:4]}...`")
 
-# Load model
-@st.cache_resource
-def load_model():
-    return pipeline("text-generation", model="mistralai/Mistral-7B-Instruct-v0.1", token=HF_TOKEN)
+# === Données ===
+data = pd.DataFrame([
+    {"Nom": "Ahmed", "Âge": 65, "Sexe": "Homme", "Symptômes": "Fièvre, toux, essoufflement", "Gravité": 8},
+    {"Nom": "Salma", "Âge": 32, "Sexe": "Femme", "Symptômes": "Céphalée, douleur oreille", "Gravité": 3},
+    {"Nom": "Youssef", "Âge": 74, "Sexe": "Homme", "Symptômes": "Confusion, chute récente", "Gravité": 9},
+    {"Nom": "Imane", "Âge": 19, "Sexe": "Femme", "Symptômes": "Maux gorge, fièvre", "Gravité": 4},
+])
 
-generator = load_model()
+st.subheader("📋 Cas cliniques")
+st.dataframe(data, use_container_width=True)
 
-# User input
-user_input = st.text_area("Votre question médicale")
+# === Résumés IA ===
+def generate_summary(row):
+    prompt = f"Patient de {row['Âge']} ans, {row['Sexe']}, présente les symptômes suivants : {row['Symptômes']}. Génère un résumé clinique."
+    headers = {"Authorization": f"Bearer {HF_TOKEN}"}
+    payload = {"inputs": prompt}
 
-# Generate response
-if st.button("Répondre"):
-    with st.spinner("Analyse en cours..."):
-        prompt = f"[{language}] {user_input}"
-        response = generator(prompt, max_new_tokens=200)[0]["generated_text"]
-        st.success("Réponse générée :")
-        st.write(response)
+    try:
+        response = requests.post(
+            "https://api-inference.huggingface.co/models/google/flan-t5-base",
+            headers=headers,
+            json=payload,
+            timeout=15
+        )
+        response.raise_for_status()
+        return response.json()[0]["generated_text"]
+    except Exception as e:
+        st.error(f"❌ Erreur IA : {e}")
+        return "Erreur IA"
+
+if st.button("🧠 Générer les résumés IA"):
+    if DEMO_MODE:
+        st.warning("Le mode démo est activé. Définissez HF_TOKEN pour activer l’IA.")
+    else:
+        st.info("Envoi des cas au moteur IA...")
+        data["Résumé IA"] = data.apply(generate_summary, axis=1)
+        st.success("✅ Résumés générés !")
+        st.dataframe(data, use_container_width=True)
+
+# === Export CSV ===
+st.download_button(
+    label="📥 Télécharger les cas enrichis (.csv)",
+    data=data.to_csv(index=False).encode("utf-8"),
+    file_name="cas_cliniques_avec_resumes.csv",
+    mime="text/csv",
+)
