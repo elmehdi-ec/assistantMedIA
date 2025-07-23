@@ -4,7 +4,7 @@ import os
 import yaml
 from modules.resume import generer_resume
 
-# 🔐 Chargement du token HF
+# 🔐 Chargement du token Hugging Face
 HF_TOKEN = os.getenv("HF_TOKEN")
 
 # ⚙️ Chargement des paramètres globaux
@@ -22,20 +22,24 @@ DATA_PATH = "data/cas_simules.csv"
 try:
     df = pd.read_csv(DATA_PATH, encoding="utf-8")
 except Exception:
-    st.error("❌ Fichier 'cas_simules.csv' introuvable.")
+    st.error("❌ Fichier 'cas_simules.csv' introuvable ou illisible.")
     st.stop()
 
-# 🎨 Interface Streamlit
+# 🎨 Configuration de l’interface
 st.set_page_config(page_title=settings.get("nom_projet", "Assistant IA"), layout="wide")
 st.title("🧠 " + settings.get("nom_projet", "Assistant IA Clinique"))
 
+# 🔍 Activation du mode dynamique depuis UI
+mode_demo = st.sidebar.checkbox("🧪 Activer le mode démo (offline)", value=(settings.get("mode_fallback", "") == "demo"))
+mode_label = "Démo" if mode_demo else "IA"
+
 if settings.get("affichage_version_ui", True):
-    mode_label = "Démo" if settings.get("mode_fallback") == "demo" else "IA"
     st.caption(f"🧬 Version : {settings.get('version', '1.0')} — Mode : {mode_label}")
 
+# 💬 Message d’accueil
 st.markdown(settings.get("message_accueil", "Bienvenue 👋"))
 
-# 🩺 Profil médecin
+# 🩺 Sélection du profil médecin
 st.sidebar.markdown("## 🩺 Profil médecin")
 if "Médecin" in df.columns:
     medecin_id = st.sidebar.selectbox("👨‍⚕️ Sélectionnez votre profil :", df["Médecin"].dropna().unique())
@@ -44,20 +48,17 @@ else:
     st.sidebar.warning(f"⚠️ Colonne 'Médecin' absente — utilisation de '{default_col}'")
     medecin_id = st.sidebar.selectbox("👨‍⚕️ Profil :", df[default_col].dropna().unique())
 
-# 🧪 Mode démo activable
-mode_demo = st.sidebar.checkbox("🧪 Activer le mode démo (offline)", value=(settings.get("mode_fallback") == "demo"))
-
-# ➕ Ajout colonne Résumé IA si absente
+# ➕ Ajout de la colonne Résumé IA si absente
 if "Résumé IA" not in df.columns:
     df["Résumé IA"] = ""
 
-# 📋 Affichage des cas cliniques
+# 📋 Affichage des cas
 st.subheader("📋 Cas cliniques")
 st.dataframe(df, use_container_width=True)
 
 # 🔁 Génération des résumés IA
 if st.button("🔁 Générer les résumés IA"):
-    st.info("📡 Envoi des cas au modèle IA...")
+    st.info("📡 Envoi des cas au moteur IA...")
 
     for i, row in df.iterrows():
         symptomes = row.get("Symptômes", "")
@@ -71,7 +72,7 @@ if st.button("🔁 Générer les résumés IA"):
 if settings.get("export_csv", True):
     csv = df.to_csv(index=False).encode("utf-8")
     st.download_button(
-        label="📥 Télécharger les cas enrichis (.csv)",
+        label="📤 Télécharger les cas enrichis (.csv)",
         data=csv,
         file_name="cas_cliniques_enrichis.csv",
         mime="text/csv"
