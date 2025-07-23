@@ -60,10 +60,19 @@ st.dataframe(df, use_container_width=True)
 if st.button("🔁 Générer les résumés IA"):
     st.info("📡 Envoi des cas au moteur IA...")
 
+    # 🔍 Vérification affichée en live
+    st.write("🧪 Mode démo =", mode_demo)
+    st.write("🔐 HF_TOKEN =", HF_TOKEN)
+
     for i, row in df.iterrows():
         symptomes = row.get("Symptômes", "")
         if isinstance(symptomes, str) and symptomes.strip():
-            resume = generer_resume(symptomes, medecin_id, HF_TOKEN, mode_demo=mode_demo)
+            resume = generer_resume(
+                symptomes,
+                medecin_id,
+                hf_token=HF_TOKEN,
+                mode_demo=mode_demo
+            )
             df.at[i, "Résumé IA"] = resume
 
     st.success("✅ Résumés IA générés.")
