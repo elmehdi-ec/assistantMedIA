@@ -18,12 +18,16 @@ def charger_settings():
 settings = charger_settings()
 
 # 📁 Chargement des cas cliniques
+@st.cache_data
+def charger_data(path):
+    try:
+        return pd.read_csv(path, encoding="utf-8")
+    except Exception:
+        st.error("❌ Fichier 'cas_simules.csv' introuvable ou illisible.")
+        st.stop()
+
 DATA_PATH = "data/cas_simules.csv"
-try:
-    df = pd.read_csv(DATA_PATH, encoding="utf-8")
-except Exception:
-    st.error("❌ Fichier 'cas_simules.csv' introuvable ou illisible.")
-    st.stop()
+df = charger_data(DATA_PATH)
 
 # 🎨 Interface Streamlit — configuration initiale
 st.set_page_config(
@@ -57,13 +61,26 @@ if "Résumé IA" not in df.columns:
 
 # 📋 Affichage des cas cliniques
 st.subheader("📋 Cas cliniques")
-st.dataframe(df, use_container_width=True)
+df_filtré = df[df["Médecin"] == medecin_id] if "Médecin" in df.columns else df
+st.dataframe(df_filtré, use_container_width=True)
 
 # 🔁 Génération des résumés IA
 if st.button("🔁 Générer les résumés IA"):
     st.info("📡 Envoi des cas au moteur IA...")
+    for i, row in df_filtré.iterrows():
+        symptomes = row.get("Symptômes", "")
+        if isinstance(symptomes, str) and symptomes.strip():
+            try:
+                resume = generer_resume(symptomes, token=HF_TOKEN, mode_demo=mode_demo)
+            except Exception as e:
+                resume = f"Erreur IA : {str(e)}"
+            df.loc[row.name, "Résumé IA"] = resume
+    st.success("✅ Résumés IA générés !")
 
-    for i, row in df.iterrows():
-    symptomes = row.get("Symptômes", "")
-    if isinstance(symptomes, str) and symptomes.strip():
-        resume
+    # 💾 Télécharger les résultats
+    st.download_button(
+        label="📥 Télécharger les résumés (CSV)",
+        data=df.to_csv(index=False),
+        file_name="cas_cliniques_resumes.csv",
+        mime="text/csv"
+    )
