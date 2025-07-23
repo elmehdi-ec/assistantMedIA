@@ -11,11 +11,14 @@ def generer_resume(symptomes: str, medecin_id: str, hf_token: str, mode_demo: bo
 
     prompt = f"""
 Vous êtes médecin urgentiste.
-Cas clinique :
+Voici un cas clinique :
 Patient : {medecin_id}
 Symptômes : {symptomes}
 
-Fournissez un résumé médical concis avec hypothèse diagnostique et conduite à tenir.
+Rédigez un résumé médical synthétique en français incluant :
+- Hypothèse diagnostique
+- Conduite à tenir
+- Examens complémentaires suggérés
 """
 
     payload = { "inputs": prompt.strip() }
@@ -29,7 +32,7 @@ Fournissez un résumé médical concis avec hypothèse diagnostique et conduite 
             if isinstance(data, list) and "generated_text" in data[0]:
                 return data[0]["generated_text"].strip()
             else:
-                return f"⚠️ Format inattendu reçu : {data}"
+                return f"⚠️ Format inattendu : {data}"
         else:
             return f"❌ Erreur {response.status_code} : {response.text[:100]}"
     except Exception as e:
