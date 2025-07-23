@@ -1,27 +1,37 @@
-import os
 import requests
 
 def generer_resume(symptomes: str, medecin_id: str, hf_token: str, mode_demo: bool = False) -> str:
-    if mode_demo or not hf_token:
-        return "🧪 Résumé simulé : le patient présente des signes compatibles avec une pathologie respiratoire."
+    if mode_demo or hf_token is None:
+        return f"(Fallback simulé) {symptomes[:40]}..."
 
-    url = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
-    prompt = (
-        f"En tant que médecin {medecin_id}, analyse cliniquement le cas suivant "
-        f"et rédige un résumé médical : {symptomes}"
-    )
-    headers = {"Authorization": f"Bearer {hf_token}"}
-    payload = {"inputs": prompt}
+    headers = {
+        "Authorization": f"Bearer {hf_token}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "inputs": f"Patient : {medecin_id}\nSymptômes : {symptomes}\n\nRésumé clinique synthétique :"
+    }
 
     try:
-        response = requests.post(url, headers=headers, json=payload, timeout=30)
-        result = response.json()
+        response = requests.post(
+            url="https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
+            headers=headers,
+            json=payload,
+            timeout=30
+        )
 
-        # ✅ Hugging Face retourne une LISTE contenant un dictionnaire avec 'generated_text'
-        if isinstance(result, list) and "generated_text" in result[0]:
-            texte = result[0]["generated_text"].strip()
-            return texte if texte else "⚠️ Résumé vide — réponse IA reçue mais non exploitable."
+        if response.status_code == 200:
+            data = response.json()
+            # Certains modèles renvoient une liste d'objets text
+            if isinstance(data, list) and "generated_text" in data[0]:
+                return data[0]["generated_text"].strip()
+            elif isinstance(data, dict) and "generated_text" in data:
+                return data["generated_text"].strip()
+            elif isinstance(data, list) and "generated_text" in data[0].get("generated_token", {}):
+                return data[0]["generated_token"]["generated_text"].strip()
+            else:
+                return f"❌ Format de réponse inattendu : {data}"
         else:
-            return "⚠️ Résumé non reçu — réponse inattendue du moteur IA."
+            return f"❌ Erreur {response.status_code} : {response.text[:100]}"
     except Exception as e:
         return f"❌ Erreur lors de l’appel IA : {str(e)}"
