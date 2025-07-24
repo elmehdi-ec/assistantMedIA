@@ -1,39 +1,34 @@
-import torch
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+import requests
 
-# 🔁 Chargement une seule fois du modèle Flan-T5 Base
-MODEL_NAME = "google/flan-t5-base"
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
+def generer_resume(symptomes: str, medecin_id: str, hf_token: str, mode_demo: bool = False) -> str:
+    if mode_demo or hf_token is None:
+        return f"(Mode démo actif) Résumé simulé : {symptomes[:40]}..."
 
-# ⚙️ Détection de l'environnement (GPU ou CPU)
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model.to(device)
+    headers = {
+        "Authorization": f"Bearer {hf_token}",
+        "Content-Type": "application/json"
+    }
 
-def generer_resume(symptomes: str, medecin_id: str, hf_token=None, mode_demo: bool = False) -> str:
-    """
-    Génère un résumé clinique en français à partir des symptômes du patient.
-    Utilise le modèle local Flan-T5 Base. Le paramètre hf_token est ignoré.
-    """
-    if mode_demo:
-        return f"(Mode démo actif) {symptomes[:40]}..."
+    # 🧠 Prompt médical structuré pour BloomZ
+    prompt = f"""
+Un patient de sexe inconnu nommé {medecin_id} présente les symptômes suivants : {symptomes}.
+Quels sont le diagnostic, la conduite à tenir et les examens complémentaires recommandés ?
+"""
 
-    # 🧠 Prompt simplifié pour amélioration de la compréhension par le modèle
-    prompt = (
-        f"Un patient de sexe inconnu nommé {medecin_id} présente les symptômes suivants : {symptomes}.\n"
-        f"Quels sont l'hypothèse diagnostique, la conduite à tenir et les examens complémentaires recommandés ?"
-    )
+    payload = { "inputs": prompt.strip() }
 
     try:
-        # ⛓️ Préparation des entrées
-        inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=256)
-        inputs = {k: v.to(device) for k, v in inputs.items()}
+        # ✅ Modèle gratuit via Inference API
+        url = "https://api-inference.huggingface.co/models/bigscience/bloomz-560m"
+        response = requests.post(url, headers=headers, json=payload, timeout=60)
 
-        # 🧪 Génération du texte
-        outputs = model.generate(**inputs, max_new_tokens=100)
-        texte = tokenizer.decode(outputs[0], skip_special_tokens=True)
-
-        return texte.strip()
-
+        if response.status_code == 200:
+            data = response.json()
+            if isinstance(data, list) and "generated_text" in data[0]:
+                return data[0]["generated_text"].strip()
+            else:
+                return f"⚠️ Format inattendu : {data}"
+        else:
+            return f"❌ Erreur {response.status_code} : {response.text[:100]}"
     except Exception as e:
-        return f"❌ Erreur IA : {str(e)}"
+        return f"❌ Erreur lors de l’appel IA : {str(e)}"
