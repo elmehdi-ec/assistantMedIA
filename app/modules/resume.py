@@ -2,25 +2,28 @@ import requests
 
 def generer_resume(symptomes: str, medecin_id: str, hf_token: str, mode_demo: bool = False) -> str:
     if mode_demo or hf_token is None:
-        return f"(Mode démo actif) Résumé simulé : {symptomes[:40]}..."
+        return f"(Démo) Résumé simulé : {symptomes[:40]}..."
 
     headers = {
         "Authorization": f"Bearer {hf_token}",
         "Content-Type": "application/json"
     }
 
-    # 🧠 Prompt médical structuré pour BloomZ
     prompt = f"""
-Un patient de sexe inconnu nommé {medecin_id} présente les symptômes suivants : {symptomes}.
-Quels sont le diagnostic, la conduite à tenir et les examens complémentaires recommandés ?
+Un patient nommé {medecin_id} présente les symptômes suivants : {symptomes}.
+Rédigez un résumé médical en français comprenant :
+- Hypothèse diagnostique
+- Conduite à tenir
+- Examens complémentaires
 """
 
-    payload = { "inputs": prompt.strip() }
-
     try:
-        # ✅ Modèle gratuit via Inference API
-        url = "https://api-inference.huggingface.co/models/bigscience/bloomz-560m"
-        response = requests.post(url, headers=headers, json=payload, timeout=60)
+        response = requests.post(
+            url="https://api-inference.huggingface.co/models/bigscience/bloomz-560m",
+            headers=headers,
+            json={"inputs": prompt.strip()},
+            timeout=60
+        )
 
         if response.status_code == 200:
             data = response.json()
@@ -30,5 +33,6 @@ Quels sont le diagnostic, la conduite à tenir et les examens complémentaires r
                 return f"⚠️ Format inattendu : {data}"
         else:
             return f"❌ Erreur {response.status_code} : {response.text[:100]}"
+
     except Exception as e:
-        return f"❌ Erreur lors de l’appel IA : {str(e)}"
+        return f"❌ Erreur IA : {str(e)}"
