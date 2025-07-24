@@ -3,20 +3,20 @@ import pandas as pd
 import yaml
 from modules.resume import generer_resume
 
-# 🔐 Lecture du token Hugging Face via Streamlit Secrets
+# 🔐 Lecture du token Hugging Face via Secrets
 try:
     HF_TOKEN = st.secrets["HF_TOKEN"]
 except KeyError:
     HF_TOKEN = None
 
-# 🔍 Vérification du token dans la sidebar
+# 🔍 Vérification visuelle dans la sidebar
 if HF_TOKEN and HF_TOKEN.strip() != "":
     st.sidebar.success("🔐 HF_TOKEN détecté ✔️")
 else:
     st.sidebar.error("❌ HF_TOKEN manquant. Configurez-le dans Streamlit Cloud → Secrets.")
     st.stop()
 
-# ⚙️ Chargement des paramètres
+# ⚙️ Chargement des paramètres personnalisés
 def charger_settings():
     try:
         with open("config/settings.yaml", "r", encoding="utf-8") as f:
@@ -35,11 +35,11 @@ except Exception:
     st.stop()
 
 # 🎨 Configuration de l’interface
-st.set_page_config(page_title="Assistant Médical IA", layout="wide")
+st.set_page_config(page_title=settings.get("nom_projet", "Assistant Médical IA"), layout="wide")
 st.title("🧠 " + settings.get("nom_projet", "Assistant Médical IA"))
 st.markdown(settings.get("message_accueil", "Bienvenue 👋"))
 
-# 🧪 Mode démo ou IA réelle
+# 🧪 Mode démo (fallback)
 mode_demo = st.sidebar.checkbox("🧪 Activer le mode démo (offline)", value=False)
 mode_label = "Démo" if mode_demo else "IA réelle"
 st.caption(f"🧬 Mode : {mode_label}")
@@ -49,24 +49,29 @@ st.sidebar.markdown("## 🩺 Médecin référent")
 if "Médecin" in df.columns:
     medecin_id = st.sidebar.selectbox("👨‍⚕️ Sélectionnez votre profil :", df["Médecin"].dropna().unique())
 else:
-    default_col = df.columns[0]
+    default_col = df.columns[0] if len(df.columns) > 0 else "Médecin"
     medecin_id = st.sidebar.selectbox("👨‍⚕️ Profil :", df[default_col].dropna().unique())
 
-# ➕ Ajout de la colonne Résumé IA
+# ➕ Ajout de la colonne Résumé IA si absente
 if "Résumé IA" not in df.columns:
     df["Résumé IA"] = ""
 
-# 📋 Affichage du tableau
+# 📋 Affichage des cas cliniques
 st.subheader("📋 Cas cliniques")
 st.dataframe(df, use_container_width=True)
 
 # 🔁 Génération IA
 if st.button("🔁 Générer les résumés IA"):
-    st.info("📡 Envoi des cas au moteur IA...")
+    st.info("📡 Résumés IA en cours de génération…")
     for i, row in df.iterrows():
         symptomes = row.get("Symptômes", "")
         if isinstance(symptomes, str) and symptomes.strip():
-            resume = generer_resume(symptomes, medecin_id, HF_TOKEN, mode_demo)
+            resume = generer_resume(
+                symptomes=symptomes,
+                medecin_id=medecin_id,
+                hf_token=HF_TOKEN,
+                mode_demo=mode_demo
+            )
             df.at[i, "Résumé IA"] = resume
     st.success("✅ Résumés IA générés.")
 
@@ -74,7 +79,7 @@ if st.button("🔁 Générer les résumés IA"):
 if settings.get("export_csv", True):
     csv = df.to_csv(index=False).encode("utf-8")
     st.download_button(
-        "📥 Télécharger les résumés (.csv)",
+        "📥 Télécharger les cas enrichis (.csv)",
         data=csv,
         file_name="cas_cliniques_enrichis.csv",
         mime="text/csv"
