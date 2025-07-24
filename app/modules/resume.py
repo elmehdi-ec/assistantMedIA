@@ -19,7 +19,7 @@ Rédigez un résumé médical en français comprenant :
 
     try:
         response = requests.post(
-            url="https://api-inference.huggingface.co/models/bigscience/bloomz-560m",
+            url = "https://api-inference.huggingface.co/models/google/flan-t5-base",
             headers=headers,
             json={"inputs": prompt.strip()},
             timeout=60
