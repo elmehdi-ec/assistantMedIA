@@ -25,7 +25,7 @@ Le résumé doit être en français, clair et concis.
     payload = { "inputs": prompt.strip() }
 
     try:
-        url = "https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct"
+        url = "https://api-inference.huggingface.co/models/bigscience/bloomz"
         response = requests.post(url, headers=headers, json=payload, timeout=60)
 
         if response.status_code == 200:
