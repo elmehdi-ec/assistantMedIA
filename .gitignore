@@ -16,6 +16,7 @@ dist/
 Thumbs.db
 
 # 🧠 Streamlit (UI, secrets, cache)
+.streamlit/secrets.toml
 .streamlit/
 .secrets.toml
 .secrets.yaml
